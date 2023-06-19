@@ -7,6 +7,8 @@ Usage:
 
 Then you can render it with povray altough you may want to tweak the camera location and maybe add some more lights.
 
+Example render: https://youtu.be/b0ljLMfLrgQ
+
 
 Released under the MIT license by
 
