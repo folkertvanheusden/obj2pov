@@ -1,5 +1,6 @@
 #! /usr/bin/python3
 
+import getopt
 import hashlib
 import math
 import sys
@@ -14,12 +15,14 @@ class wavefront_indices:
         return f'{self.vertex_index}/{self.texture_coordinate_index if not self.texture_coordinate_index is None else "-"}/{self.normal_index if not self.normal_index is None else "-"}'
 
 class wavefront:
-    def __init__(self, file):
+    def __init__(self, obj_file):
         self.vertexes = []
 
         self.face_element_list = []
 
-        fh = open(file, 'r')
+        mtl_file = None
+
+        fh = open(obj_file, 'r')
 
         error_seen = []
 
@@ -36,6 +39,9 @@ class wavefront:
 
             if parts[0] == 'v':
                 self.vertexes.append([float(s) for s in parts[1:]])
+
+            elif parts[0] == 'mtllib':
+                mtl_file = parts[1]
 
             elif parts[0] == 'usemtl':
                 usemtl = parts[1]
@@ -62,6 +68,32 @@ class wavefront:
 
         fh.close()
 
+        if mtl_file == None:
+            return
+
+        self.mtl = dict()
+
+        mtl_name = None
+
+        fh = open(mtl_file, 'r')
+
+        for line in fh.readlines():
+            if line[0] == '#':
+                continue
+
+            parts = line.split()
+
+            if len(parts) == 0:
+                continue
+
+            if parts[0] == 'newmtl':
+                mtl_name = parts[1]
+
+            elif parts[0] == 'Kd':
+                self.mtl[mtl_name] = [float(f) for f in parts[1:]]
+
+        fh.close()
+
     def get_faces(self):
         meshes = []
         for face_element in w.face_element_list:
@@ -73,6 +105,18 @@ class wavefront:
             meshes.append((mesh, face_element[1]))
 
         return meshes
+
+    def get_mtl_color(self, name):
+        if name in self.mtl:
+            return self.mtl[name]
+
+        face_name_hash = hashlib.sha256(face[1].encode('utf-8')).digest()
+
+        r = face_name_hash[0] / 255
+        g = face_name_hash[1] / 255
+        b = face_name_hash[2] / 255
+
+        return (r, g, b)
 
 w = wavefront(sys.argv[1])
 
@@ -99,8 +143,6 @@ for i in range(0, 3):
     sd_center[i] = math.sqrt((sd_center[i] / div_count) - math.pow(avg_center[i], 2.0))
 
 # emit objects
-fake_colors = True
-
 for face in faces:
     face[0].append(face[0][0])  # close polygonb
 
@@ -112,12 +154,8 @@ for face in faces:
     g = 1.0
     b = 0.4
 
-    if fake_colors and not face[1] is None:
-        face_name_hash = hashlib.sha256(face[1].encode('utf-8')).digest()
-
-        r = face_name_hash[0] / 255
-        g = face_name_hash[1] / 255
-        b = face_name_hash[2] / 255
+    if not face[1] is None:
+        r, g, b = w.get_mtl_color(face[1])
 
     print('  texture { pigment { color rgb <%f, %f, %f> } }' % (r, g, b))
 
