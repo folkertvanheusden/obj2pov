@@ -1,5 +1,6 @@
 #! /usr/bin/python3
 
+import hashlib
 import math
 import sys
 
@@ -22,6 +23,8 @@ class wavefront:
 
         error_seen = []
 
+        usemtl = None
+
         for line in fh.readlines():
             if line[0] == '#':
                 continue
@@ -33,6 +36,9 @@ class wavefront:
 
             if parts[0] == 'v':
                 self.vertexes.append([float(s) for s in parts[1:]])
+
+            elif parts[0] == 'usemtl':
+                usemtl = parts[1]
 
             elif parts[0] == 'f':
                 face_elements = []
@@ -46,7 +52,7 @@ class wavefront:
 
                     face_elements.append(wavefront_indices(vertex_index, texture_coordinate_index, normal_index))
 
-                self.face_element_list.append(face_elements)
+                self.face_element_list.append((face_elements, usemtl))
 
             else:
                 if not parts[0] in error_seen:
@@ -61,10 +67,10 @@ class wavefront:
         for face_element in w.face_element_list:
             mesh = []
 
-            for indices in face_element:
+            for indices in face_element[0]:
                 mesh.append(self.vertexes[indices.vertex_index - 1])
 
-            meshes.append(mesh)
+            meshes.append((mesh, face_element[1]))
 
         return meshes
 
@@ -78,13 +84,13 @@ faces = w.get_faces()
 # determine center
 div_count = 0
 for face in faces:
-    for f in face:
+    for f in face[0]:
         for i in range(0, 3):
             avg_center[i] += f[i]
 
             sd_center[i] += f[i] * f[i]
 
-    div_count += len(face)
+    div_count += len(face[0])
 
 # determine size of object
 for i in range(0, 3):
@@ -93,13 +99,28 @@ for i in range(0, 3):
     sd_center[i] = math.sqrt((sd_center[i] / div_count) - math.pow(avg_center[i], 2.0))
 
 # emit objects
+fake_colors = True
+
 for face in faces:
-    face.append(face[0])  # close polygonb
+    face[0].append(face[0][0])  # close polygonb
 
     print('polygon {')
-    print(f'\t{len(face)},')
-    print(','.join([f'<{f[0]}, {f[1]}, {f[2]}>' for f in face]))
-    print('  texture { pigment { color rgb <0.4, 1.0, 0.4> } }')
+    print(f'\t{len(face[0])},')
+    print(','.join([f'<{f[0]}, {f[1]}, {f[2]}>' for f in face[0]]))
+
+    r = 0.4
+    g = 1.0
+    b = 0.4
+
+    if fake_colors and not face[1] is None:
+        face_name_hash = hashlib.sha256(face[1].encode('utf-8')).digest()
+
+        r = face_name_hash[0] / 255
+        g = face_name_hash[1] / 255
+        b = face_name_hash[2] / 255
+
+    print('  texture { pigment { color rgb <%f, %f, %f> } }' % (r, g, b))
+
     print('}')
 
 # camera
