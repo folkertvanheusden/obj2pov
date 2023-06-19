@@ -78,7 +78,11 @@ class wavefront:
 
         mtl_name = None
 
-        fh = open(path + '/' + mtl_file, 'r')
+        mtl_file = (path + '/' if path != '' else '') + mtl_file
+
+        print(f'Loading mtl-file from {mtl_file}', file=sys.stderr)
+
+        fh = open(mtl_file, 'r')
 
         for line in fh.readlines():
             if line[0] == '#':
@@ -91,9 +95,13 @@ class wavefront:
 
             if parts[0] == 'newmtl':
                 mtl_name = parts[1]
+                self.mtl[mtl_name] = dict()
 
             elif parts[0] == 'Kd':
-                self.mtl[mtl_name] = [float(f) for f in parts[1:]]
+                self.mtl[mtl_name]['color'] = [float(f) for f in parts[1:]]
+
+            elif parts[0] == 'map_Kd':
+                self.mtl[mtl_name]['texture'] = parts[1]
 
         fh.close()
 
@@ -111,7 +119,7 @@ class wavefront:
 
     def get_mtl_color(self, name):
         if name in self.mtl:
-            return self.mtl[name]
+            return self.mtl[name]['color']
 
         face_name_hash = hashlib.sha256(face[1].encode('utf-8')).digest()
 
@@ -121,6 +129,13 @@ class wavefront:
 
         return (r, g, b)
 
+    def get_mtl_texture(self, name):
+        if name in self.mtl:
+            return self.mtl[name]['texture']
+
+        return None
+
+print(f'Processing {sys.argv[1]}...', file=sys.stderr)
 w = wavefront(sys.argv[1])
 
 avg_center = [0., 0., 0.]
@@ -153,19 +168,33 @@ for face in faces:
     print(f'\t{len(face[0])},')
     print(','.join([f'<{f[0]}, {f[1]}, {f[2]}>' for f in face[0]]))
 
-    r = 0.4
-    g = 1.0
-    b = 0.4
+    texture = w.get_mtl_texture(face[1])
 
-    if not face[1] is None:
-        r, g, b = w.get_mtl_color(face[1])
+    if not texture is None:
+        dot = texture.rfind('.')
 
-    print('  texture { pigment { color rgb <%f, %f, %f> } }' % (r, g, b))
+        if dot == -1:
+            ext = 'png'
+
+        else:
+            ext = texture[dot + 1:].lower()
+
+        print('  texture { pigment { image_map { %s "%s" } } }' % (ext, texture))
+
+    else:
+        r = 0.4
+        g = 1.0
+        b = 0.4
+
+        if not face[1] is None:
+            r, g, b = w.get_mtl_color(face[1])
+
+        print('  texture { pigment { color rgb <%f, %f, %f> } }' % (r, g, b))
 
     print('}')
 
 # camera
-camera_distance_mul = 5
+camera_distance_mul = 3
 
 print('camera {')
 print(f'  look_at<{avg_center[0]}, {avg_center[1]}, {avg_center[2]}>')
