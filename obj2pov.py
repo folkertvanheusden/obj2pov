@@ -3,6 +3,7 @@
 import getopt
 import hashlib
 import math
+import os
 import sys
 
 class wavefront_indices:
@@ -21,6 +22,8 @@ class wavefront:
         self.face_element_list = []
 
         mtl_file = None
+
+        path = os.path.dirname(obj_file)
 
         fh = open(obj_file, 'r')
 
@@ -75,7 +78,7 @@ class wavefront:
 
         mtl_name = None
 
-        fh = open(mtl_file, 'r')
+        fh = open(path + '/' + mtl_file, 'r')
 
         for line in fh.readlines():
             if line[0] == '#':
