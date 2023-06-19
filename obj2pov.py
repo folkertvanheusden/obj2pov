@@ -20,11 +20,16 @@ class wavefront:
 
         fh = open(file, 'r')
 
+        error_seen = []
+
         for line in fh.readlines():
             if line[0] == '#':
                 continue
 
             parts = line.split()
+
+            if len(parts) == 0:
+                continue
 
             if parts[0] == 'v':
                 self.vertexes.append([float(s) for s in parts[1:]])
@@ -42,6 +47,12 @@ class wavefront:
                     face_elements.append(wavefront_indices(vertex_index, texture_coordinate_index, normal_index))
 
                 self.face_element_list.append(face_elements)
+
+            else:
+                if not parts[0] in error_seen:
+                    print(line, file=sys.stderr)
+
+                    error_seen.append(parts[0])
 
         fh.close()
 
