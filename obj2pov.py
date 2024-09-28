@@ -296,5 +296,5 @@ for z in range(-1, 2):
 
             print('light_source {')
             print(f'  <{avg_center[0] + sd_center[0] * light_distance_mul * x}, {avg_center[1] + sd_center[1] * light_distance_mul * y}, {avg_center[2] + sd_center[2] * light_distance_mul * z}>')
-            print('  color rgb <1.0, 1.0, 1.0>')
+            print('  color rgb <0.5, 0.5, 0.5>')
             print('}')
