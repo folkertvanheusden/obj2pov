@@ -23,6 +23,7 @@ class wavefront:
         self.face_element_list = []
         mtl_file = None
         usemtl = None
+        self.mtl = dict()
 
         path = os.path.dirname(obj_file)
         fh = open(obj_file, 'r')
@@ -74,7 +75,6 @@ class wavefront:
         if mtl_file == None:
             return
 
-        self.mtl = dict()
         mtl_name = None
         mtl_file = (path + '/' if path != '' else '') + mtl_file
 
@@ -116,28 +116,39 @@ class wavefront:
         return meshes
 
     def get_openscad(self):
-        meshes = []
+        polyhedrons = []
+
         for face_element in w.face_element_list:
-            polyhedron = [] 
-
+            polyhedron = dict()
+            polyhedron['vertices'] = dict()
+            polyhedron['faces'] = []
+            polyhedron['texture'] = face_element[1]
+            nr = 0
             for indices in face_element[0]:
-                mesh.append(self.vertexes[indices.vertex_index - 1])
+                if indices.vertex_index - 1 not in polyhedron['vertices']:
+                    polyhedron['vertices'][indices.vertex_index - 1] = (nr, self.vertexes[indices.vertex_index - 1])
+                    nr += 1
+                cur_nr = polyhedron['vertices'][indices.vertex_index - 1]
+                polyhedron['faces'].append(cur_nr[0])
 
-            meshes.append((mesh, face_element[1]))
+            polyhedrons.append(polyhedron)
 
-        return meshes
+        return polyhedrons
 
-    def get_mtl_color(self, name):
+    def get_mtl_color(self, name, gen_if_missing = True):
         if name in self.mtl:
             return self.mtl[name]['color']
 
-        face_name_hash = hashlib.sha256(face[1].encode('utf-8')).digest()
+        if gen_if_missing:
+            face_name_hash = hashlib.sha256(face[1].encode('utf-8')).digest()
 
-        r = face_name_hash[0] / 255
-        g = face_name_hash[1] / 255
-        b = face_name_hash[2] / 255
+            r = face_name_hash[0] / 255
+            g = face_name_hash[1] / 255
+            b = face_name_hash[2] / 255
 
-        return (r, g, b)
+            return (r, g, b)
+
+        return (None, None, None)
 
     def get_mtl_texture(self, name):
         if name in self.mtl:
@@ -201,7 +212,7 @@ def help():
     print('-h    this help')
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], 'f:th')
+    opts, args = getopt.getopt(sys.argv[1:], 'f:Sth')
 except getopt.GetoptError as err:
     print(err)
     help()
@@ -265,10 +276,8 @@ if povray:
 
         if not texture is None:
             dot = texture.rfind('.')
-
             if dot == -1:
                 ext = 'png'
-
             else:
                 ext = texture[dot + 1:].lower()
 
@@ -314,4 +323,15 @@ if povray:
                 print('}')
 
 else:
-    pass
+    import collections
+    for polyhedron in w.get_openscad():
+        if polyhedron['texture'] != None:
+            texture = w.get_mtl_texture(polyhedron['texture'])
+            r, g, b, a = determine_color_of_file(texture)
+            print(f'color([{r},{g},{b},{a}]) ')
+        print('polyhedron(')
+        l = [point[1] for point in [polyhedron['vertices'][v] for v in polyhedron['vertices']]]
+        print(f'points={l},')
+        f = [point[0] for point in [polyhedron['vertices'][v] for v in polyhedron['vertices']]]
+        print(f'faces=[{f}]')
+        print(');')
