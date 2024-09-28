@@ -107,10 +107,22 @@ class wavefront:
 
         fh.close()
 
-    def get_faces(self):
+    def get_faces_povray(self):
         meshes = []
         for face_element in w.face_element_list:
             mesh = []
+
+            for indices in face_element[0]:
+                mesh.append(self.vertexes[indices.vertex_index - 1])
+
+            meshes.append((mesh, face_element[1]))
+
+        return meshes
+
+    def get_openscad(self):
+        meshes = []
+        for face_element in w.face_element_list:
+            polyhedron = [] 
 
             for indices in face_element[0]:
                 mesh.append(self.vertexes[indices.vertex_index - 1])
@@ -188,6 +200,7 @@ def determine_color_of_file(file):
 
 def help():
     print('-f x  file to process')
+    print('-S    openscad output instead of povray')
     print('-t    use most dominant color from texture instead of file reference')
     print('-h    this help')
 
@@ -200,13 +213,16 @@ except getopt.GetoptError as err:
 
 file = None
 png_color = False
+povray = True
 
 for o, a in opts:
     if o == '-f':
         file = a
-    elif o = '-t':
+    elif o == '-t':
         png_color = True
-    elif o = '-h':
+    elif o == '-S':
+        povray = False
+    elif o == '-h':
         help()
         sys.exit(0)
 
@@ -217,84 +233,89 @@ if file == None:
 print(f'Processing {file}...', file=sys.stderr)
 w = wavefront(file)
 
-avg_center = [0., 0., 0.]
-sd_center = [0., 0., 0.]
+if povray:
+    avg_center = [0., 0., 0.]
+    sd_center = [0., 0., 0.]
 
-faces = w.get_faces()
+    faces = w.get_faces_povray()
 
-# determine center
-div_count = 0
-for face in faces:
-    for f in face[0]:
-        for i in range(0, 3):
-            avg_center[i] += f[i]
+    # determine center
+    div_count = 0
+    for face in faces:
+        for f in face[0]:
+            for i in range(0, 3):
+                avg_center[i] += f[i]
 
-            sd_center[i] += f[i] * f[i]
+                sd_center[i] += f[i] * f[i]
 
-    div_count += len(face[0])
+        div_count += len(face[0])
 
-# determine size of object
-for i in range(0, 3):
-    avg_center[i] /= div_count
+    # determine size of object
+    for i in range(0, 3):
+        avg_center[i] /= div_count
 
-    sd_center[i] = math.sqrt((sd_center[i] / div_count) - math.pow(avg_center[i], 2.0))
+        sd_center[i] = math.sqrt((sd_center[i] / div_count) - math.pow(avg_center[i], 2.0))
 
-# emit objects
-for face in faces:
-    face[0].append(face[0][0])  # close polygonb
+    # emit objects
+    for face in faces:
+        print(face)
+        face[0].append(face[0][0])  # close polygonb
 
-    print('polygon {')
-    print(f'\t{len(face[0])},')
-    print(','.join([f'<{f[0]}, {f[1]}, {f[2]}>' for f in face[0]]))
+        print('polygon {')
+        print(f'\t{len(face[0])},')
+        print(','.join([f'<{f[0]}, {f[1]}, {f[2]}>' for f in face[0]]))
 
-    texture = w.get_mtl_texture(face[1])
+        texture = w.get_mtl_texture(face[1])
 
-    if not texture is None:
-        dot = texture.rfind('.')
+        if not texture is None:
+            dot = texture.rfind('.')
 
-        if dot == -1:
-            ext = 'png'
+            if dot == -1:
+                ext = 'png'
+
+            else:
+                ext = texture[dot + 1:].lower()
+
+            if png_color:
+                r, g, b, a = determine_color_of_file(texture)
+                print('  texture { pigment { color rgbt <%f, %f, %f, %f> } }' % (r, g, b, 1.0 - a))
+
+            else:
+                print('  texture { pigment { image_map { %s "%s" } } }' % (ext, texture))
 
         else:
-            ext = texture[dot + 1:].lower()
+            r = 0.4
+            g = 1.0
+            b = 0.4
 
-        if png_color:
-            r, g, b, a = determine_color_of_file(texture)
-            print('  texture { pigment { color rgbt <%f, %f, %f, %f> } }' % (r, g, b, 1.0 - a))
+            if not face[1] is None:
+                r, g, b = w.get_mtl_color(face[1])
 
-        else:
-            print('  texture { pigment { image_map { %s "%s" } } }' % (ext, texture))
+            print('  texture { pigment { color rgb <%f, %f, %f> } }' % (r, g, b))
 
-    else:
-        r = 0.4
-        g = 1.0
-        b = 0.4
+        print('}')
 
-        if not face[1] is None:
-            r, g, b = w.get_mtl_color(face[1])
+    # camera
+    camera_distance_mul = 3
 
-        print('  texture { pigment { color rgb <%f, %f, %f> } }' % (r, g, b))
-
+    print('camera {')
+    print(f'  look_at<{avg_center[0]}, {avg_center[1]}, {avg_center[2]}>')
+    print(f'  location<{avg_center[0] + sd_center[0] * camera_distance_mul}, {avg_center[1] + sd_center[1] * camera_distance_mul}, {avg_center[2] + sd_center[2] * camera_distance_mul}>')
     print('}')
 
-# camera
-camera_distance_mul = 3
+    # light sources
+    light_distance_mul = 5
 
-print('camera {')
-print(f'  look_at<{avg_center[0]}, {avg_center[1]}, {avg_center[2]}>')
-print(f'  location<{avg_center[0] + sd_center[0] * camera_distance_mul}, {avg_center[1] + sd_center[1] * camera_distance_mul}, {avg_center[2] + sd_center[2] * camera_distance_mul}>')
-print('}')
+    for z in range(-1, 2):
+        for y in range(-1, 2):
+            for x in range(-1, 2):
+                if x == 0 and y == 0 and z == 0:
+                    continue
 
-# light sources
-light_distance_mul = 5
+                print('light_source {')
+                print(f'  <{avg_center[0] + sd_center[0] * light_distance_mul * x}, {avg_center[1] + sd_center[1] * light_distance_mul * y}, {avg_center[2] + sd_center[2] * light_distance_mul * z}>')
+                print('  color rgb <0.5, 0.5, 0.5>')
+                print('}')
 
-for z in range(-1, 2):
-    for y in range(-1, 2):
-        for x in range(-1, 2):
-            if x == 0 and y == 0 and z == 0:
-                continue
-
-            print('light_source {')
-            print(f'  <{avg_center[0] + sd_center[0] * light_distance_mul * x}, {avg_center[1] + sd_center[1] * light_distance_mul * y}, {avg_center[2] + sd_center[2] * light_distance_mul * z}>')
-            print('  color rgb <0.5, 0.5, 0.5>')
-            print('}')
+else:
+    pass
