@@ -20,25 +20,20 @@ class wavefront_indices:
 class wavefront:
     def __init__(self, obj_file):
         self.vertexes = []
-
         self.face_element_list = []
-
         mtl_file = None
+        usemtl = None
 
         path = os.path.dirname(obj_file)
-
         fh = open(obj_file, 'r')
 
-        error_seen = []
-
-        usemtl = None
+        error_seen = set()
 
         for line in fh.readlines():
             if line[0] == '#':
                 continue
 
             parts = line.split()
-
             if len(parts) == 0:
                 continue
 
@@ -61,6 +56,9 @@ class wavefront:
                     texture_coordinate_index = int(element_parts[1]) if len(element_parts) >= 2 else None
                     normal_index = int(element_parts[2]) if len(element_parts) >= 3 else None
 
+                    if normal_index != None:
+                        print(normal_index, file=sys.stderr)
+
                     face_elements.append(wavefront_indices(vertex_index, texture_coordinate_index, normal_index))
 
                 self.face_element_list.append((face_elements, usemtl))
@@ -69,7 +67,7 @@ class wavefront:
                 if not parts[0] in error_seen:
                     print(line, file=sys.stderr)
 
-                    error_seen.append(parts[0])
+                    error_seen.add(parts[0])
 
         fh.close()
 
@@ -77,9 +75,7 @@ class wavefront:
             return
 
         self.mtl = dict()
-
         mtl_name = None
-
         mtl_file = (path + '/' if path != '' else '') + mtl_file
 
         print(f'Loading mtl-file from {mtl_file}', file=sys.stderr)
@@ -204,9 +200,9 @@ png_color = False
 for o, a in opts:
     if o == '-f':
         file = a
-    elif o = '-t':
+    elif o == '-t':
         png_color = True
-    elif o = '-h':
+    elif o == '-h':
         help()
         sys.exit(0)
 
