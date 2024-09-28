@@ -20,6 +20,9 @@ These examples how a minecraft segment converted to OpenSCAD.
 * https://vanheusden.com/permshare/minecraft.scad.xz  this one is large and takes ages to load
 * https://vanheusden.com/permshare/minecraft2.scad.xz  smaller segment, renders in a few minutes
 * https://vanheusden.com/permshare/minecraft2-scad.png  how it looks in OpenSCAD
+* https://vanheusden.com/permshare/minecraft3-scad.png  larger segment but with occlude enabled in jmc2obj
+* https://vanheusden.com/permshare/minecraft3.scad.xz  the generated OpenSCAD file
+
 
 
 
