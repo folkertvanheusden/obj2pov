@@ -1,5 +1,7 @@
 #! /usr/bin/python3
 
+# (C) 2023-2024 by Folkert van Heusden
+
 import getopt
 import hashlib
 import math
@@ -135,8 +137,85 @@ class wavefront:
 
         return None
 
-print(f'Processing {sys.argv[1]}...', file=sys.stderr)
-w = wavefront(sys.argv[1])
+m = dict()
+
+def most_frequent(List):
+    counter = 0
+    num = List[0]
+
+    for i in List:
+        if i[0] == 0 and i[1] == 0 and i[2] == 0 and i[3] == 0:  # hack for exported minecraft
+            continue
+        curr_frequency = List.count(i)
+        if curr_frequency > counter:
+            counter = curr_frequency
+            num = i
+
+    return num
+
+# from https://stackoverflow.com/questions/43111029/how-to-find-the-average-colour-of-an-image-in-python-with-opencv
+def determine_color_of_file(file):
+    try:
+        if file in m:
+            return m[file]
+
+        print(f'Processing {file}', file=sys.stderr)
+
+        import cv2, numpy as np
+        from sklearn.cluster import KMeans
+
+        image = cv2.imread(file, cv2.IMREAD_UNCHANGED)
+        image = cv2.cvtColor(image, cv2.COLOR_BGRA2RGBA)
+        reshape = image.reshape((image.shape[0] * image.shape[1], 4))
+
+        # Find and display most dominant colors
+        cluster = KMeans(n_clusters=100).fit(reshape)
+        #print(cluster.cluster_centers_, cluster.inertia_, file=sys.stderr)
+        #print(most_frequent(cluster.cluster_centers_.tolist()), file=sys.stderr)
+
+#        if 'leaves' in file:
+#            print(cluster.cluster_centers_, file=sys.stderr)
+
+        mf = most_frequent(cluster.cluster_centers_.tolist())
+        r, g, b, a = mf[0] / 255, mf[1] / 255, mf[2] / 255, mf[3] / 255
+        m[file] = (r, g, b, a)
+
+        return r, g, b, a
+
+    except Exception as e:
+        print(e, file=sys.stderr)
+        return 1, 1, 1, 1
+
+def help():
+    print('-f x  file to process')
+    print('-t    use most dominant color from texture instead of file reference')
+    print('-h    this help')
+
+try:
+    opts, args = getopt.getopt(sys.argv[1:], 'f:th')
+except getopt.GetoptError as err:
+    print(err)
+    help()
+    sys.exit(2)
+
+file = None
+png_color = False
+
+for o, a in opts:
+    if o == '-f':
+        file = a
+    elif o = '-t':
+        png_color = True
+    elif o = '-h':
+        help()
+        sys.exit(0)
+
+if file == None:
+    help()
+    sys.exit(1)
+
+print(f'Processing {file}...', file=sys.stderr)
+w = wavefront(file)
 
 avg_center = [0., 0., 0.]
 sd_center = [0., 0., 0.]
@@ -179,7 +258,12 @@ for face in faces:
         else:
             ext = texture[dot + 1:].lower()
 
-        print('  texture { pigment { image_map { %s "%s" } } }' % (ext, texture))
+        if png_color:
+            r, g, b, a = determine_color_of_file(texture)
+            print('  texture { pigment { color rgbt <%f, %f, %f, %f> } }' % (r, g, b, 1.0 - a))
+
+        else:
+            print('  texture { pigment { image_map { %s "%s" } } }' % (ext, texture))
 
     else:
         r = 0.4

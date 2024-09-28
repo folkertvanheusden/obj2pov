@@ -3,7 +3,7 @@ The first release is still rather limited altough the minecraft obj-files produc
 
 Usage:
 
-    ./obj2pov.py inputfile.obj > outputfile.pov
+    ./obj2pov.py -f inputfile.obj > outputfile.pov
 
 Then you can render it with povray altough you may want to tweak the camera location and maybe add some more lights.
 
