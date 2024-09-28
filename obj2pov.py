@@ -57,9 +57,6 @@ class wavefront:
                     texture_coordinate_index = int(element_parts[1]) if len(element_parts) >= 2 else None
                     normal_index = int(element_parts[2]) if len(element_parts) >= 3 else None
 
-                    if normal_index != None:
-                        print(normal_index, file=sys.stderr)
-
                     face_elements.append(wavefront_indices(vertex_index, texture_coordinate_index, normal_index))
 
                 self.face_element_list.append((face_elements, usemtl))
@@ -265,7 +262,6 @@ if povray:
 
     # emit objects
     for face in faces:
-        print(face)
         face[0].append(face[0][0])  # close polygonb
 
         print('polygon {')
