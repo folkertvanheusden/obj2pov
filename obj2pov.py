@@ -302,6 +302,7 @@ if povray:
     print('camera {')
     print(f'  look_at<{avg_center[0]}, {avg_center[1]}, {avg_center[2]}>')
     print(f'  location<{avg_center[0] + sd_center[0] * camera_distance_mul}, {avg_center[1] + sd_center[1] * camera_distance_mul}, {avg_center[2] + sd_center[2] * camera_distance_mul}>')
+    print(f'  right x * image_width / image_height')
     print('}')
 
     # light sources
