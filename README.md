@@ -14,7 +14,9 @@ For PovRay you may want to tweak the camera location and maybe add some more lig
 
 Note that for a model from j-mc-2-obj, you want to tick 'Create a seperate object for each block' and untick 'Do not allow duplicate vertexes' in the export window.
 
-Example render with PovRay : https://youtu.be/b0ljLMfLrgQ
+Example renders with PovRay:
+* https://youtu.be/b0ljLMfLrgQ
+* https://www.youtube.com/watch?v=pa1t5PZWyrA
 
 These examples how a minecraft segment converted to OpenSCAD.
 * https://vanheusden.com/permshare/minecraft.scad.xz  this one is large and takes ages to load
