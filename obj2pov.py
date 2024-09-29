@@ -5,6 +5,7 @@
 import getopt
 import hashlib
 import math
+import numpy
 import os
 import sys
 
@@ -282,7 +283,19 @@ if povray:
                 print('  texture { pigment { color rgbt <%f, %f, %f, %f> } }' % (r, g, b, 1.0 - a))
 
             else:
-                print('  texture { pigment { image_map { %s "%s" } } }' % (ext, texture))
+                # crude plane detection
+                sdx = numpy.std([f[0] for f in face[0]])
+                sdy = numpy.std([f[1] for f in face[0]])
+                sdz = numpy.std([f[2] for f in face[0]])
+
+                if sdx < sdy and sdx < sdz:
+                    rot = 'rotate <0, 90, 0>'
+                elif sdy < sdx and sdy < sdz:
+                    rot = 'rotate <90, 0, 0>'
+                else:
+                    rot = 'rotate <0, 0, 90>'
+
+                print('  texture { pigment { image_map { %s "%s" } %s } }' % (ext, texture, rot))
 
         else:
             r = 0.4
