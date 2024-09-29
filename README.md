@@ -17,6 +17,7 @@ Note that for a model from j-mc-2-obj, you want to tick 'Create a seperate objec
 Example renders with PovRay:
 * https://youtu.be/b0ljLMfLrgQ
 * https://www.youtube.com/watch?v=pa1t5PZWyrA
+* https://vanheusden.com/permshare/minecraft-huge.png  fragment of the NURDspace (www.nurdspace.nl) Minecraft server, rendered with PovRay
 
 These examples how a minecraft segment converted to OpenSCAD.
 * https://vanheusden.com/permshare/minecraft.scad.xz  this one is large and takes ages to load
