@@ -15,6 +15,7 @@ For PovRay you may want to tweak the camera location and maybe add some more lig
 Note that for a model from j-mc-2-obj, you want to tick 'Create a seperate object for each block' and untick 'Do not allow duplicate vertexes' in the export window.
 
 Example renders with PovRay:
+* https://www.youtube.com/watch?v=lMgW4TiFRhg
 * https://youtu.be/b0ljLMfLrgQ
 * https://www.youtube.com/watch?v=pa1t5PZWyrA
 * https://vanheusden.com/permshare/minecraft-huge.png  fragment of the NURDspace (www.nurdspace.nl) Minecraft server, rendered with PovRay
