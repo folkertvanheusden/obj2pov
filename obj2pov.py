@@ -43,7 +43,9 @@ class wavefront:
                 self.vertexes.append([float(s) for s in parts[1:]])
 
             elif parts[0] == 'mtllib':
-                mtl_file = parts[1]
+                space = line.find(' ')
+                if space != -1:
+                    mtl_file = line[space + 1:].strip()
 
             elif parts[0] == 'usemtl':
                 usemtl = parts[1]
