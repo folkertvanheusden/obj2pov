@@ -149,7 +149,7 @@ class wavefront:
         return (None, None, None)
 
     def get_mtl_texture(self, name):
-        if name in self.mtl:
+        if name in self.mtl and 'texture' in self.mtl[name]:
             return self.mtl[name]['texture']
 
         return None
