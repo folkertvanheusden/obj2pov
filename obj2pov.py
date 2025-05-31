@@ -268,13 +268,13 @@ if povray:
     for group in faces:
         for rot in faces[group]:
             face = faces[group][rot]
-            for f in face[0]:
-                for i in range(0, 3):
-                    avg_center[i] += f[i]
+            for f in face:
+                for coordinate in f:
+                    for i in range(0, 3):
+                        avg_center[i] += coordinate[i]
+                        sd_center[i] += coordinate[i] * coordinate[i]
 
-                    sd_center[i] += f[i] * f[i]
-
-            div_count += len(face[0])
+                div_count += len(f)
 
     # determine size of object
     for i in range(0, 3):
