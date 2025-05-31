@@ -157,7 +157,7 @@ class wavefront:
             return self.mtl[name]['color']
 
         if gen_if_missing:
-            face_name_hash = hashlib.sha256(face[1].encode('utf-8')).digest()
+            face_name_hash = hashlib.sha256(name.encode('utf-8')).digest()
 
             r = face_name_hash[0] / 255
             g = face_name_hash[1] / 255
@@ -324,7 +324,7 @@ if povray:
                 g = 1.0
                 b = 0.4
 
-                if not face[1] is None:
+                if not group is None:
                     r, g, b = w.get_mtl_color(group)
 
                 print('  texture { pigment { color rgb <%f, %f, %f> } }' % (r, g, b))
