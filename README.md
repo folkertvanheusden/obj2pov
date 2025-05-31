@@ -32,4 +32,4 @@ These examples how a minecraft segment converted to OpenSCAD.
 
 Released under the MIT license by
 
-Folkert van Heusden <mail@vanheusden.com>
+Folkert van Heusden <folkert@vanheusden.com>

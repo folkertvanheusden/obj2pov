@@ -1,6 +1,6 @@
 #! /usr/bin/python3
 
-# (C) 2023-2024 by Folkert van Heusden
+# (C) 2023-2025 by Folkert van Heusden
 
 import getopt
 import hashlib
