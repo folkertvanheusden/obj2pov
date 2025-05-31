@@ -104,14 +104,31 @@ class wavefront:
         fh.close()
 
     def get_faces_povray(self):
-        meshes = []
+        meshes = dict()
         for face_element in w.face_element_list:
             mesh = []
-
             for indices in face_element[0]:
                 mesh.append(self.vertexes[indices.vertex_index - 1])
 
-            meshes.append((mesh, face_element[1]))
+            # crude plane detection
+            sdx = numpy.std([f[0] for f in mesh])
+            sdy = numpy.std([f[1] for f in mesh])
+            sdz = numpy.std([f[2] for f in mesh])
+
+            rot = None
+            if sdx < sdy and sdx < sdz:
+                rot = 'y'
+            elif sdy < sdx and sdy < sdz:
+                rot = 'x'
+            else:
+                rot = 'z'
+
+            if not face_element[1] in meshes:
+                meshes[face_element[1]] = dict()
+            if not rot in meshes[face_element[1]]:
+                meshes[face_element[1]][rot] = []
+
+            meshes[face_element[1]][rot].append(mesh)
 
         return meshes
 
@@ -136,7 +153,7 @@ class wavefront:
         return polyhedrons
 
     def get_mtl_color(self, name, gen_if_missing = True):
-        if name in self.mtl:
+        if name in self.mtl and 'color' in self.mtl[name]:
             return self.mtl[name]['color']
 
         if gen_if_missing:
@@ -248,14 +265,16 @@ if povray:
 
     # determine center
     div_count = 0
-    for face in faces:
-        for f in face[0]:
-            for i in range(0, 3):
-                avg_center[i] += f[i]
+    for group in faces:
+        for rot in faces[group]:
+            face = faces[group][rot]
+            for f in face[0]:
+                for i in range(0, 3):
+                    avg_center[i] += f[i]
 
-                sd_center[i] += f[i] * f[i]
+                    sd_center[i] += f[i] * f[i]
 
-        div_count += len(face[0])
+            div_count += len(face[0])
 
     # determine size of object
     for i in range(0, 3):
@@ -264,54 +283,53 @@ if povray:
         sd_center[i] = math.sqrt((sd_center[i] / div_count) - math.pow(avg_center[i], 2.0))
 
     # emit objects
-    for face in faces:
-        face[0].append(face[0][0])  # close polygonb
+    for group in faces:
+        for rot in faces[group]:
+            print('union {')
+            for face in faces[group][rot]:
+                face.append(face[0])  # close polygon
 
-        print('polygon {')
-        print(f'\t{len(face[0])},')
-        print(','.join([f'<{f[0]}, {f[1]}, {f[2]}>' for f in face[0]]))
+                print('polygon {')
+                print(f'\t{len(face)},')
+                print(','.join([f'<{f[0]}, {f[1]}, {f[2]}>' for f in face]))
+                print('}')
 
-        texture = w.get_mtl_texture(face[1])
+            texture = w.get_mtl_texture(group)
 
-        if not texture is None:
-            dot = texture.rfind('.')
-            if dot == -1:
-                ext = 'png'
-            else:
-                ext = texture[dot + 1:].lower()
-                if ext == 'jpg':
-                    ext = 'jpeg'
-
-            if png_color:
-                r, g, b, a = determine_color_of_file(texture)
-                print('  texture { pigment { color rgbt <%f, %f, %f, %f> } }' % (r, g, b, 1.0 - a))
-
-            else:
-                # crude plane detection
-                sdx = numpy.std([f[0] for f in face[0]])
-                sdy = numpy.std([f[1] for f in face[0]])
-                sdz = numpy.std([f[2] for f in face[0]])
-
-                if sdx < sdy and sdx < sdz:
-                    rot = 'rotate <0, 90, 0>'
-                elif sdy < sdx and sdy < sdz:
-                    rot = 'rotate <90, 0, 0>'
+            if not texture is None:
+                dot = texture.rfind('.')
+                if dot == -1:
+                    ext = 'png'
                 else:
-                    rot = 'rotate <0, 0, 90>'
+                    ext = texture[dot + 1:].lower()
+                    if ext == 'jpg':
+                        ext = 'jpeg'
 
-                print('  texture { pigment { image_map { %s "%s" } %s } }' % (ext, texture, rot))
+                if png_color:
+                    r, g, b, a = determine_color_of_file(texture)
+                    print('  texture { pigment { color rgbt <%f, %f, %f, %f> } }' % (r, g, b, 1.0 - a))
 
-        else:
-            r = 0.4
-            g = 1.0
-            b = 0.4
+                else:
+                    if rot == 'z':
+                        r = 'rotate <0, 0, 90>'
+                    elif rot == 'y':
+                        r = 'rotate <0, 90, 0>'
+                    else:
+                        r = 'rotate <90, 0, 0>'
 
-            if not face[1] is None:
-                r, g, b = w.get_mtl_color(face[1])
+                    print('  texture { pigment { image_map { %s "%s" } %s } }' % (ext, texture, r))
 
-            print('  texture { pigment { color rgb <%f, %f, %f> } }' % (r, g, b))
+            else:
+                r = 0.4
+                g = 1.0
+                b = 0.4
 
-        print('}')
+                if not face[1] is None:
+                    r, g, b = w.get_mtl_color(group)
+
+                print('  texture { pigment { color rgb <%f, %f, %f> } }' % (r, g, b))
+
+            print('}')
 
     # camera
     camera_distance_mul = 3
