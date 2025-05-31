@@ -57,8 +57,8 @@ class wavefront:
                     element_parts = element.split('/')
 
                     vertex_index = int(element_parts[0]) if len(element_parts) >= 1 else None
-                    texture_coordinate_index = int(element_parts[1]) if len(element_parts) >= 2 else None
-                    normal_index = int(element_parts[2]) if len(element_parts) >= 3 else None
+                    texture_coordinate_index = int(element_parts[1]) if len(element_parts) >= 2 and element_parts[1].isnumeric() else None
+                    normal_index = int(element_parts[2]) if len(element_parts) >= 3 and element_parts[2].isnumeric() else None
 
                     face_elements.append(wavefront_indices(vertex_index, texture_coordinate_index, normal_index))
 
