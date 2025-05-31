@@ -80,28 +80,32 @@ class wavefront:
 
         print(f'Loading mtl-file from {mtl_file}', file=sys.stderr)
 
-        fh = open(mtl_file, 'r')
+        try:
+            fh = open(mtl_file, 'r')
 
-        for line in fh.readlines():
-            if line[0] == '#':
-                continue
+            for line in fh.readlines():
+                if line[0] == '#':
+                    continue
 
-            parts = line.split()
+                parts = line.split()
 
-            if len(parts) == 0:
-                continue
+                if len(parts) == 0:
+                    continue
 
-            if parts[0] == 'newmtl':
-                mtl_name = parts[1]
-                self.mtl[mtl_name] = dict()
+                if parts[0] == 'newmtl':
+                    mtl_name = parts[1]
+                    self.mtl[mtl_name] = dict()
 
-            elif parts[0] == 'Kd':
-                self.mtl[mtl_name]['color'] = [float(f) for f in parts[1:]]
+                elif parts[0] == 'Kd':
+                    self.mtl[mtl_name]['color'] = [float(f) for f in parts[1:]]
 
-            elif parts[0] == 'map_Kd':
-                self.mtl[mtl_name]['texture'] = parts[1]
+                elif parts[0] == 'map_Kd':
+                    self.mtl[mtl_name]['texture'] = parts[1]
 
-        fh.close()
+            fh.close()
+
+        except Exception as e:
+            print(f'Cannot open {mtl_file}', file=sys.stderr)
 
     def get_faces_povray(self):
         meshes = dict()
@@ -287,8 +291,6 @@ if povray:
         for rot in faces[group]:
             print('union {')
             for face in faces[group][rot]:
-                face.append(face[0])  # close polygon
-
                 print('polygon {')
                 print(f'\t{len(face)},')
                 print(','.join([f'<{f[0]}, {f[1]}, {f[2]}>' for f in face]))
