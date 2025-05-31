@@ -279,6 +279,8 @@ if povray:
                 ext = 'png'
             else:
                 ext = texture[dot + 1:].lower()
+                if ext == 'jpg':
+                    ext = 'jpeg'
 
             if png_color:
                 r, g, b, a = determine_color_of_file(texture)
